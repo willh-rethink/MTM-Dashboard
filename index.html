@@ -636,7 +636,7 @@ function renderMembers(curr, prior) {
     newEnroll = null;
   }
 
-  const priorTotal = prior ? n(prior, "Active members") : null;
+  const priorTotal = (selectedSCN === "All" && prior) ? n(prior, "Active members") : null;
 
   document.getElementById("members-cards").innerHTML = `
     <div class="card highlight">
