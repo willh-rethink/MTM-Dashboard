@@ -593,25 +593,20 @@ function filteredVal(curr, colAll, colSCN) {
 // ── Snapshot ─────────────────────────────────────────────────────────────────
 function renderSnapshot(curr, prior, isMostRecent) {
   const activeNow = n(curr, "Active members");
-  const priorLabel = prior ? formatDate(prior["Week"]) : "Prior week";
+  // Prior week data lives in the *current* row's P/Q/R/S/T columns
+  const priorLabel = prior ? formatDate(prior["Week"]) : null;
 
-  const schedMembers = prior ? n(prior, "Active members") : null;
-  const schedMeals   = prior ? n(prior, "Scheduled meals — prior week") : null;
+  const schedMeals   = n(curr, "Scheduled meals — prior week");
+  const schedDrops   = n(curr, "Scheduled drops — prior week");
+  const actMeals     = n(curr, "Actual meals — prior week");
+  const actDrops     = n(curr, "Actual meal drops — prior week");
+  const actGrocery   = n(curr, "Actual grocery bags drops — prior week");
+  // Grocery scheduled for prior week comes from the prior row's current-week col
   const schedGrocery = prior ? n(prior, "Scheduled grocery bags - current week") : null;
-  const schedDrops   = prior ? n(prior, "Scheduled drops — prior week") : null;
-  const actDrops     = prior ? n(prior, "Actual meal drops — prior week") : null;
-  const actMeals     = prior ? n(prior, "Actual meals — prior week") : null;
-  const actGrocery   = prior ? n(prior, "Actual grocery bags drops — prior week") : null;
 
-  document.getElementById("snapshot-box").innerHTML = `
-    <div class="snapshot-header">As of ${formatDate(curr["Week"])}</div>
-    <div class="snapshot-active">${fmt(activeNow)} <span>Active MTM Members</span></div>
+  const priorSection = priorLabel ? `
     <div class="snapshot-prior-label">Prior week: ${priorLabel}</div>
     <div class="snapshot-grid">
-      <div class="snapshot-item">
-        <div class="snapshot-item-label">Members</div>
-        <div class="snapshot-item-vals">Sched ${fmt(schedMembers)}<span class="sep">/</span>Actual ${fmt(schedMembers)}</div>
-      </div>
       <div class="snapshot-item">
         <div class="snapshot-item-label">Meals</div>
         <div class="snapshot-item-vals">Sched ${fmt(schedMeals)}<span class="sep">/</span>Actual ${fmt(actMeals)}</div>
@@ -625,6 +620,12 @@ function renderSnapshot(curr, prior, isMostRecent) {
         <div class="snapshot-item-vals">Sched ${fmt(schedDrops)}<span class="sep">/</span>Actual ${fmt(actDrops)}</div>
       </div>
     </div>
+  ` : `<div class="snapshot-prior-label" style="opacity:0.7">Prior week data will appear after first Friday snapshot.</div>`;
+
+  document.getElementById("snapshot-box").innerHTML = `
+    <div class="snapshot-header">As of ${formatDate(curr["Week"])}</div>
+    <div class="snapshot-active">${fmt(activeNow)} <span>Active MTM Members</span></div>
+    ${priorSection}
   `;
 }
 
@@ -704,45 +705,42 @@ function renderSCN(curr) {
 
 // ── Deliveries ────────────────────────────────────────────────────────────────
 function renderDeliveries(curr, prior, isMostRecent) {
+  // Prior week actuals always live in the *current* row's R/S/T columns.
+  // Prior week scheduled lives in curr's P/Q cols (meals/drops) and prior row's col O (grocery).
+  const hasPrior = !!prior;
+
   const rows = [
     {
-      label: "Members",
-      sched: n(curr, "Active members"),
-      actual: isMostRecent ? null : n(curr, "Active members"),
-      priorSched: prior ? n(prior, "Active members") : null,
-      priorActual: prior ? n(prior, "Active members") : null,
-    },
-    {
       label: "Meals",
-      sched: n(curr, "Scheduled meals - current week"),
-      actual: isMostRecent ? null : n(prior, "Actual meals — prior week"),
-      priorSched: prior ? n(prior, "Scheduled meals — prior week") : null,
-      priorActual: prior ? n(prior, "Actual meals — prior week") : null,
+      sched: n(curr, "Scheduled meals — prior week"),
+      actual: n(curr, "Actual meals — prior week"),
     },
     {
       label: "Grocery Bags",
-      sched: n(curr, "Scheduled grocery bags - current week"),
-      actual: isMostRecent ? null : n(prior, "Actual grocery bags drops — prior week"),
-      priorSched: prior ? n(prior, "Scheduled grocery bags - current week") : null,
-      priorActual: prior ? n(prior, "Actual grocery bags drops — prior week") : null,
+      sched: hasPrior ? n(prior, "Scheduled grocery bags - current week") : null,
+      actual: n(curr, "Actual grocery bags drops — prior week"),
     },
     {
       label: "Drops",
-      sched: n(curr, "Scheduled Meal Drops - current week"),
-      actual: isMostRecent ? null : n(prior, "Actual meal drops — prior week"),
-      priorSched: prior ? n(prior, "Scheduled drops — prior week") : null,
-      priorActual: prior ? n(prior, "Actual meal drops — prior week") : null,
+      sched: n(curr, "Scheduled drops — prior week"),
+      actual: n(curr, "Actual meal drops — prior week"),
     },
   ];
 
+  // Label the table header with the prior week date if available
+  const priorWeekNote = hasPrior
+    ? ` <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#888;font-size:11px;">(week of ${formatDate(prior["Week"])})</span>`
+    : "";
+  document.querySelector("#deliveries-table thead tr th:first-child").innerHTML = `Prior Week${priorWeekNote}`;
+  document.querySelector("#deliveries-table thead tr th:first-child").style.whiteSpace = "nowrap";
+
   document.getElementById("deliveries-body").innerHTML = rows.map(r => {
-    const showActuals = !isMostRecent;
-    const actualCell = showActuals ? fmt(r.priorActual) : "—";
-    const chipHtml = showActuals ? rateChip(r.priorSched, r.priorActual) : `<span class="rate-chip none">—</span>`;
+    const actualCell = hasPrior ? fmt(r.actual) : "—";
+    const chipHtml = hasPrior ? rateChip(r.sched, r.actual) : `<span class="rate-chip none">—</span>`;
     return `
       <tr>
         <td>${r.label}</td>
-        <td>${fmt(r.sched)}</td>
+        <td>${hasPrior ? fmt(r.sched) : "—"}</td>
         <td>${actualCell}</td>
         <td>${chipHtml}</td>
       </tr>
