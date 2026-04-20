@@ -604,28 +604,9 @@ function renderSnapshot(curr, prior, isMostRecent) {
   // Grocery scheduled for prior week comes from the prior row's current-week col
   const schedGrocery = prior ? n(prior, "Scheduled grocery bags - current week") : null;
 
-  const priorSection = priorLabel ? `
-    <div class="snapshot-prior-label">Prior week: ${priorLabel}</div>
-    <div class="snapshot-grid">
-      <div class="snapshot-item">
-        <div class="snapshot-item-label">Meals</div>
-        <div class="snapshot-item-vals">Sched ${fmt(schedMeals)}<span class="sep">/</span>Actual ${fmt(actMeals)}</div>
-      </div>
-      <div class="snapshot-item">
-        <div class="snapshot-item-label">Grocery</div>
-        <div class="snapshot-item-vals">Sched ${fmt(schedGrocery)}<span class="sep">/</span>Actual ${fmt(actGrocery)}</div>
-      </div>
-      <div class="snapshot-item">
-        <div class="snapshot-item-label">Drops</div>
-        <div class="snapshot-item-vals">Sched ${fmt(schedDrops)}<span class="sep">/</span>Actual ${fmt(actDrops)}</div>
-      </div>
-    </div>
-  ` : `<div class="snapshot-prior-label" style="opacity:0.7">Prior week data will appear after first Friday snapshot.</div>`;
-
   document.getElementById("snapshot-box").innerHTML = `
     <div class="snapshot-header">As of ${formatDate(curr["Week"])}</div>
     <div class="snapshot-active">${fmt(activeNow)} <span>Active MTM Members</span></div>
-    ${priorSection}
   `;
 }
 
