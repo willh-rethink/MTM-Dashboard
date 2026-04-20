@@ -636,7 +636,13 @@ function renderMembers(curr, prior) {
     newEnroll = null;
   }
 
-  const priorTotal = (selectedSCN === "All" && prior) ? n(prior, "Active members") : null;
+  let priorTotal = null;
+  if (prior) {
+    if (selectedSCN === "All")   priorTotal = n(prior, "Active members");
+    else if (selectedSCN === "PHS")   priorTotal = n(prior, "Active Members - PHS");
+    else if (selectedSCN === "SOMOS") priorTotal = n(prior, "Active Members - SOMOS");
+    else if (selectedSCN === "HEALI") priorTotal = n(prior, "Active Members - HEALI");
+  }
 
   document.getElementById("members-cards").innerHTML = `
     <div class="card highlight">
