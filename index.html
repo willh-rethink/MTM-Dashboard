@@ -462,14 +462,19 @@ async function loadData() {
     const res = await fetch(CSV_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
-    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
-    // Normalize: rename blank first-column header to "Week", drop future/empty rows, sort newest first
+    const parsed = Papa.parse(text, {
+      header: true,
+      skipEmptyLines: true,
+      // Name the first blank header "Week"; rename all other blank headers so
+      // PapaParse doesn't overwrite the date with trailing empty columns.
+      transformHeader: (header, index) => {
+        if (header === '') return index === 0 ? 'Week' : `__col_${index}`;
+        return header;
+      }
+    });
+    // Drop rows without a valid YYYY-MM-DD week date or missing member data
     allRows = parsed.data
-      .map(row => {
-        if ("" in row) { row["Week"] = row[""]; delete row[""]; }
-        return row;
-      })
-      .filter(row => row["Week"] && row["Active members"] !== "" && row["Active members"] !== undefined)
+      .filter(row => /^\d{4}-\d{2}-\d{2}$/.test(row["Week"]) && row["Active members"] !== "" && row["Active members"] !== undefined)
       .sort((a, b) => new Date(b["Week"]) - new Date(a["Week"]));
     if (!allRows.length) throw new Error("No data rows found in CSV.");
     init();
