@@ -474,7 +474,7 @@ async function loadData() {
     });
     // Drop rows without a valid YYYY-MM-DD week date or missing member data
     allRows = parsed.data
-      .filter(row => /^\d{4}-\d{2}-\d{2}$/.test(row["Week"]) && row["Active members"] !== "" && row["Active members"] !== undefined)
+      .filter(row => /^\d{4}-\d{2}-\d{2}$/.test(row["Week"]) && Number(row["Active members"]) > 0)
       .sort((a, b) => new Date(b["Week"]) - new Date(a["Week"]));
     if (!allRows.length) throw new Error("No data rows found in CSV.");
     init();
